@@ -187,8 +187,13 @@
           </div>
           <div>
             <label>聯絡電話（可多筆）</label>
-            <input type="text" id="phone1" name="phone1" placeholder="主要電話" required>
-            <input type="text" id="phone2" name="phone2" placeholder="次要電話（選填）" style="margin-top:8px;">
+            <div id="phoneContainer">
+              <div class="phone-entry" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                <input type="text" class="phone-input" placeholder="主要電話" required style="flex: 1;">
+                <button type="button" class="remove-phone-btn" style="padding: 6px 10px; background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; cursor: pointer; font-size: 12px; display: none;" onclick="removePhone(this)">刪除</button>
+              </div>
+            </div>
+            <button type="button" id="addPhoneBtn" style="margin-top: 8px; padding: 6px 12px; background: rgba(34,211,238,0.2); color: var(--accent-strong); border: 1px solid rgba(34,211,238,0.4); border-radius: 6px; cursor: pointer; font-size: 12px;" onclick="addPhone()">➕ 新增電話</button>
           </div>
           <div>
             <label>學生身分別</label>
@@ -238,12 +243,23 @@
           <p class="muted">• 身分別需上傳相關證明（如低收證明、身障手冊、僑生居留證等）</p>
           <p class="muted">• 資料變更後請確認申請表是否需同步更新</p>
           <p class="muted">• 學號為系統識別碼，無法自行修改</p>
-          <div style="margin-top:12px;">
-            <label style="font-size:13px;">上傳身分證明文件</label>
-            <input type="file" style="margin-top:6px;">
-          </div>
         </div>
       </div>
+    </section>
+
+    <section class="card" style="background: rgba(34,211,238,0.06); border-color: rgba(34,211,238,0.4);">
+      <div class="section-title" style="font-size:18px; margin-bottom:12px;">📄 身分證明文件上傳</div>
+      <p class="muted" style="margin-bottom:14px;">請上傳相關身分證明文件（如低收證明、身障手冊、僑生居留證等）</p>
+      <form id="identityProofForm" style="display: grid; gap: 12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600;">選擇檔案（JPG/PNG/PDF，最大 5MB）</label>
+          <input type="file" id="identityProofFile" accept=".jpg,.jpeg,.png,.pdf" style="margin-top:6px;">
+          <p class="muted" style="font-size:12px; margin-top:4px;">支援格式：JPG、PNG、PDF</p>
+        </div>
+        <button type="submit" class="btn primary" style="padding:8px 14px; font-size:13px; width: fit-content;">上傳證明文件</button>
+      </form>
+      <div id="uploadStatus" style="display:none; margin-top:12px; padding:10px; border-radius:8px; font-size:13px;"></div>
+      <div id="proofList" style="margin-top:14px;"></div>
     </section>
   </div>
 
@@ -264,6 +280,76 @@
     // 使用登入的學生ID
     const CURRENT_STUDENT_ID = currentUser.id;
 
+    // ===== 電話管理函數 =====
+    // 新增電話號碼欄位
+    function addPhone(phoneValue = '', isFirst = false) {
+      const phoneContainer = document.getElementById('phoneContainer');
+      const phoneEntry = document.createElement('div');
+      phoneEntry.className = 'phone-entry';
+      phoneEntry.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px;';
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'phone-input';
+      input.placeholder = isFirst ? '主要電話' : '次要電話（選填）';
+      input.value = phoneValue;
+      input.required = isFirst; // 第一個電話必填
+      input.style.flex = '1';
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'remove-phone-btn';
+      removeBtn.textContent = '刪除';
+      removeBtn.style.cssText = 'padding: 6px 10px; background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; cursor: pointer; font-size: 12px;';
+      removeBtn.onmouseover = function() { this.style.background = 'rgba(239,68,68,0.3)'; };
+      removeBtn.onmouseout = function() { this.style.background = 'rgba(239,68,68,0.2)'; };
+      removeBtn.onclick = function() { removePhone(this); };
+      
+      // 第一個電話不顯示刪除按鈕
+      if (!isFirst) {
+        removeBtn.style.display = 'inline-block';
+      } else {
+        removeBtn.style.display = 'none';
+      }
+      
+      phoneEntry.appendChild(input);
+      phoneEntry.appendChild(removeBtn);
+      phoneContainer.appendChild(phoneEntry);
+      
+      // 更新所有刪除按鈕的顯示狀態
+      updatePhoneButtons();
+    }
+
+    // 刪除電話號碼欄位
+    function removePhone(btn) {
+      const phoneEntry = btn.closest('.phone-entry');
+      phoneEntry.remove();
+      
+      // 更新所有刪除按鈕的顯示狀態
+      updatePhoneButtons();
+    }
+
+    // 更新電話刪除按鈕的顯示
+    function updatePhoneButtons() {
+      const phoneEntries = document.querySelectorAll('.phone-entry');
+      phoneEntries.forEach((entry, index) => {
+        const removeBtn = entry.querySelector('.remove-phone-btn');
+        const input = entry.querySelector('.phone-input');
+        
+        // 第一個電話必填且不可刪除
+        if (index === 0) {
+          removeBtn.style.display = 'none';
+          input.required = true;
+          input.placeholder = '主要電話';
+        } else {
+          removeBtn.style.display = 'inline-block';
+          input.required = false;
+          input.placeholder = '次要電話（選填）';
+        }
+      });
+    }
+
+    // ===== 資料載入函數 =====
     // 載入學生資料
     async function loadStudentData() {
       try {
@@ -284,13 +370,24 @@
         document.getElementById('identity').value = data.identity || '一般生';
         document.getElementById('major').value = data.major || '';
 
-        // 填充電話號碼
-        const phones = data.phones || [];
-        if (phones.length > 0) {
-          document.getElementById('phone1').value = phones[0];
+        // 填充電話號碼（支援多筆）
+        let phones = [];
+        if (data.phones) {
+          // 如果 phones 是陣列，直接使用；如果是字串，則分割
+          phones = Array.isArray(data.phones) ? data.phones : data.phones.split(',');
         }
-        if (phones.length > 1) {
-          document.getElementById('phone2').value = phones[1];
+        
+        const phoneContainer = document.getElementById('phoneContainer');
+        phoneContainer.innerHTML = ''; // 清空現有電話欄位
+        
+        if (phones.length === 0) {
+          // 如果沒有電話，至少顯示一個空欄位
+          addPhone('', true);
+        } else {
+          // 依序新增電話欄位
+          phones.forEach((phone, index) => {
+            addPhone(phone.trim(), index === 0);
+          });
         }
 
         // 根據身分別顯示額外欄位
@@ -308,6 +405,9 @@
         // 顯示表單
         document.getElementById('loading').style.display = 'none';
         document.getElementById('profileForm').style.display = 'grid';
+        
+        // 載入已上傳的證明文件
+        loadIdentityProofs();
 
       } catch (error) {
         console.error('載入錯誤:', error);
@@ -322,6 +422,147 @@
         overseasFields.style.display = 'block';
       } else {
         overseasFields.style.display = 'none';
+      }
+    }
+
+    // 載入已上傳的身分證明檔案
+    async function loadIdentityProofs() {
+      try {
+        const response = await fetch(`${API_BASE}/identity-proof`);
+        const result = await response.json();
+        
+        if (!result.success || !result.data) return;
+        
+        // 過濾出當前學生的檔案
+        const myProofs = result.data.filter(p => p.student_id === CURRENT_STUDENT_ID);
+        
+        const listDiv = document.getElementById('proofList');
+        if (myProofs.length === 0) {
+          listDiv.innerHTML = '<p class="muted" style="font-size:12px;">尚未上傳任何證明文件</p>';
+          return;
+        }
+        
+        listDiv.innerHTML = '<div style="font-size:12px; color:var(--accent-strong); margin-bottom:8px;">✓ 已上傳的證明文件：</div>' +
+          myProofs.map(p => `
+            <div style="padding:8px; background:rgba(34,211,238,0.1); border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span>${p.file_name}</span>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <span class="muted">${(p.file_size / 1024).toFixed(0)} KB</span>
+                <button onclick="deleteProof('${p.id}')" style="padding:4px 8px; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.4); border-radius:6px; cursor:pointer; font-size:11px;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">刪除</button>
+              </div>
+            </div>
+          `).join('');
+      } catch (err) {
+        console.error('載入檔案列表失敗:', err);
+      }
+    }
+
+    // 處理身分證明檔案上傳
+    // 刪除身分證明檔案
+    async function deleteProof(proofId) {
+      if (!confirm('確定要刪除這個證明文件嗎？')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/identity-proof/${proofId}`, {
+          method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✓ 證明文件已刪除');
+          loadIdentityProofs();
+        } else {
+          alert('❌ 刪除失敗：' + result.message);
+        }
+      } catch (err) {
+        console.error('刪除失敗:', err);
+        alert('❌ 刪除失敗，請稍後再試');
+      }
+    }
+
+    // 處理身分證明檔案上傳
+    async function uploadIdentityProof(event) {
+      event.preventDefault();
+      
+      console.log('uploadIdentityProof called');
+      console.log('CURRENT_STUDENT_ID:', CURRENT_STUDENT_ID);
+      
+      const fileInput = document.getElementById('identityProofFile');
+      const file = fileInput.files[0];
+      
+      console.log('Upload triggered:', { file, CURRENT_STUDENT_ID });
+      
+      if (!file) {
+        alert('請選擇檔案');
+        return;
+      }
+      
+      if (!CURRENT_STUDENT_ID) {
+        alert('錯誤：未能取得學生ID，請重新登入');
+        console.error('CURRENT_STUDENT_ID is invalid:', CURRENT_STUDENT_ID);
+        return;
+      }
+      
+      if (file.size > 5242880) {
+        alert('檔案過大，最大限制為 5MB');
+        return;
+      }
+      
+      try {
+        const formData = new FormData();
+        formData.append('student_id', CURRENT_STUDENT_ID);
+        formData.append('file', file);
+        
+        console.log('FormData prepared:', { 
+          student_id: CURRENT_STUDENT_ID, 
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type 
+        });
+        
+        const statusDiv = document.getElementById('uploadStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'rgba(59,130,246,0.2)';
+        statusDiv.style.color = '#93c5fd';
+        statusDiv.textContent = '上傳中...';
+        
+        const url = `${API_BASE}/identity-proof`;
+        console.log('Uploading to:', url);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData
+        });
+        
+        console.log('Response received:', { status: response.status, ok: response.ok });
+        
+        const result = await response.json();
+        console.log('Response JSON:', result);
+        
+        if (result.success) {
+          statusDiv.style.background = 'rgba(34,197,94,0.2)';
+          statusDiv.style.color = '#86efac';
+          statusDiv.textContent = '✓ 上傳成功';
+          fileInput.value = '';
+          setTimeout(() => {
+            statusDiv.style.display = 'none';
+            loadIdentityProofs();
+          }, 2000);
+        } else {
+          statusDiv.style.background = 'rgba(248,113,113,0.2)';
+          statusDiv.style.color = '#fecdd3';
+          statusDiv.textContent = '❌ ' + result.message;
+        }
+      } catch (err) {
+        console.error('上傳失敗:', err);
+        const statusDiv = document.getElementById('uploadStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'rgba(248,113,113,0.2)';
+        statusDiv.style.color = '#fecdd3';
+        statusDiv.textContent = '❌ 上傳失敗：' + err.message;
       }
     }
 
@@ -340,10 +581,12 @@
       event.preventDefault();
 
       const formData = new FormData(event.target);
-      const phones = [];
       
-      if (formData.get('phone1')) phones.push(formData.get('phone1'));
-      if (formData.get('phone2')) phones.push(formData.get('phone2'));
+      // 收集所有電話號碼
+      const phoneInputs = document.querySelectorAll('.phone-input');
+      const phones = Array.from(phoneInputs)
+        .map(input => input.value.trim())
+        .filter(phone => phone !== ''); // 過濾空白電話
 
       const data = {
         name: formData.get('name'),
@@ -397,12 +640,26 @@
 
     // 頁面載入時執行
     window.addEventListener('DOMContentLoaded', () => {
+      console.log('Main DOMContentLoaded event fired');
+      
+      // 1. 載入學生資料
       loadStudentData();
       
-      // 綁定表單提交事件
+      // 2. 綁定主表單提交事件
       const form = document.getElementById('studentForm');
       if (form) {
         form.addEventListener('submit', saveStudentData);
+      }
+      
+      // 3. 綁定檔案上傳表單
+      const identityProofForm = document.getElementById('identityProofForm');
+      console.log('Identity proof form found:', identityProofForm);
+      
+      if (identityProofForm) {
+        console.log('Adding submit event listener to identity proof form');
+        identityProofForm.addEventListener('submit', uploadIdentityProof);
+      } else {
+        console.warn('Identity proof form not found in DOM');
       }
     });
   </script>
