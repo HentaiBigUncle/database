@@ -38,6 +38,33 @@ pool.getConnection((err, connection) => {
 });
 
 // ============================================
+// 通用：使用者查詢
+// ============================================
+
+// 依 ID 取得使用者基本資訊（含身分別）
+app.get('/api/user/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const [rows] = await promisePool.query(
+      'SELECT id, name, email, type FROM User WHERE id = ? LIMIT 1',
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: '找不到使用者' });
+    }
+
+    res.json({
+      success: true,
+      data: rows[0]
+    });
+  } catch (error) {
+    console.error('取得使用者錯誤:', error);
+    res.status(500).json({ success: false, message: '伺服器錯誤', error: error.message });
+  }
+});
+
+// ============================================
 // 學生 API 路由
 // ============================================
 
@@ -236,18 +263,26 @@ app.get('/api/student/:id/applications', async (req, res) => {
 // 取得所有可申請的獎學金
 app.get('/api/scholarships', async (req, res) => {
   try {
-    const [rows] = await promisePool.query(`
-      SELECT 
+    const isAdminView = req.query.admin === 'true' || req.query.admin === '1';
+
+    const [rows] = await promisePool.query(
+      `SELECT 
         s.name,
         s.amount,
         s.description,
-        GROUP_CONCAT(u.name SEPARATOR ', ') as organizations
+        s.identity_restriction,
+        s.is_published,
+        s.published_by,
+        s.published_at,
+        GROUP_CONCAT(u.name SEPARATOR ', ') AS organizations
       FROM Scholarship s
       LEFT JOIN Scholarship_Organization so ON s.name = so.scholarship_name
       LEFT JOIN Organization o ON so.organization_id = o.id
       LEFT JOIN User u ON o.id = u.id
-      GROUP BY s.name, s.amount, s.description
-    `);
+      ${isAdminView ? '' : 'WHERE s.is_published = TRUE'}
+      GROUP BY s.name, s.amount, s.description, s.identity_restriction, s.is_published, s.published_by, s.published_at
+      ORDER BY (s.published_at IS NULL), s.published_at DESC, s.name ASC`
+    );
 
     res.json({
       success: true,
@@ -256,6 +291,126 @@ app.get('/api/scholarships', async (req, res) => {
   } catch (error) {
     console.error('取得獎學金列表錯誤:', error);
     res.status(500).json({ success: false, message: '伺服器錯誤', error: error.message });
+  }
+});
+
+// 新增獎學金
+app.post('/api/scholarships', async (req, res) => {
+  const connection = await promisePool.getConnection();
+  try {
+    const { name, amount, description, organization_id, identity_restriction, publish, admin_id } = req.body;
+
+    if (!name || !amount) {
+      return res.status(400).json({ success: false, message: 'name 與 amount 為必填欄位' });
+    }
+
+    await connection.beginTransaction();
+
+    // 建立獎學金
+    await connection.query(
+      `INSERT INTO Scholarship (name, amount, description, identity_restriction, is_published, published_by, published_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE amount = VALUES(amount), description = VALUES(description), identity_restriction = VALUES(identity_restriction)`,
+      [
+        name,
+        amount,
+        description || null,
+        identity_restriction || null,
+        publish ? 1 : 0,
+        publish ? (admin_id || null) : null,
+        publish ? new Date() : null
+      ]
+    );
+
+    // 關聯機構
+    if (organization_id) {
+      await connection.query(
+        `INSERT IGNORE INTO Scholarship_Organization (scholarship_name, organization_id) VALUES (?, ?)`,
+        [name, organization_id]
+      );
+    }
+
+    await connection.commit();
+    res.json({ success: true, message: '獎學金已建立', data: { name } });
+  } catch (error) {
+    await connection.rollback();
+    console.error('新增獎學金錯誤:', error);
+    res.status(500).json({ success: false, message: '新增失敗', error: error.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// 刪除獎學金
+app.delete('/api/scholarships/:name', async (req, res) => {
+  try {
+    const scholarshipName = req.params.name;
+
+    // 檢查是否存在申請紀錄
+    const [apps] = await promisePool.query(
+      'SELECT COUNT(*) AS cnt FROM Application WHERE scholarship_name = ?',
+      [scholarshipName]
+    );
+    if (apps[0].cnt > 0) {
+      return res.status(409).json({ success: false, message: '已有申請紀錄，無法刪除此獎學金' });
+    }
+
+    const [result] = await promisePool.query(
+      'DELETE FROM Scholarship WHERE name = ?',
+      [scholarshipName]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: '找不到指定的獎學金' });
+    }
+
+    // Scholarship_Organization 有 ON DELETE CASCADE，無須手動清理
+    res.json({ success: true, message: '刪除成功' });
+  } catch (error) {
+    console.error('刪除獎學金錯誤:', error);
+    res.status(500).json({ success: false, message: '刪除失敗', error: error.message });
+  }
+});
+
+// 發放獎學金
+app.post('/api/scholarships/:name/publish', async (req, res) => {
+  try {
+    const scholarshipName = req.params.name;
+    const adminId = req.body.admin_id || null;
+
+    const [result] = await promisePool.query(
+      `UPDATE Scholarship SET is_published = TRUE, published_by = ?, published_at = NOW() WHERE name = ?`,
+      [adminId, scholarshipName]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: '找不到指定的獎學金' });
+    }
+
+    res.json({ success: true, message: '獎學金已發放' });
+  } catch (error) {
+    console.error('發放獎學金錯誤:', error);
+    res.status(500).json({ success: false, message: '發放失敗', error: error.message });
+  }
+});
+
+// 下架獎學金
+app.post('/api/scholarships/:name/unpublish', async (req, res) => {
+  try {
+    const scholarshipName = req.params.name;
+    const [result] = await promisePool.query(
+      `UPDATE Scholarship SET is_published = FALSE, published_by = NULL, published_at = NULL WHERE name = ?`,
+      [scholarshipName]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: '找不到指定的獎學金' });
+    }
+
+    res.json({ success: true, message: '獎學金已下架' });
+  } catch (error) {
+    console.error('下架獎學金錯誤:', error);
+    res.status(500).json({ success: false, message: '下架失敗', error: error.message });
   }
 });
 

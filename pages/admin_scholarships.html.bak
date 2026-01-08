@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系統管理員端 - ScholarLink</title>
+  <script src="../auth.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --surface: #0b1220;
+      --accent: #7dd3fc;
+      --accent-strong: #22d3ee;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.06), transparent 25%),
+                  radial-gradient(circle at 80% 10%, rgba(14,165,233,0.07), transparent 26%),
+                  radial-gradient(circle at 50% 80%, rgba(56,189,248,0.05), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      background: rgba(15,23,42,0.8);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .brand .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 0 18px rgba(125,211,252,0.6);
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 18px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    nav a:hover { color: var(--accent-strong); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 22px 60px; }
+    .grid { display: grid; gap: 18px; }
+    .card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 18px 20px;
+      box-shadow: var(--shadow);
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(125,211,252,0.15);
+      color: var(--accent-strong);
+      border: 1px solid rgba(125,211,252,0.35);
+    }
+    .hero {
+      margin: 28px 0 10px;
+      padding: 26px;
+      border-radius: 16px;
+      background: linear-gradient(120deg, rgba(14,165,233,0.25), rgba(8,47,73,0.65)),
+                  linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.8));
+      border: 1px solid rgba(125,211,252,0.35);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 12px;
+    }
+    .hero h1 { margin: 0; font-size: 28px; letter-spacing: 0.3px; }
+    .hero p { margin: 0; color: var(--muted); max-width: 760px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn {
+      padding: 11px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.2px;
+      transition: all 0.2s ease;
+      display: inline-block;
+    }
+    .btn:hover { border-color: var(--accent-strong); color: var(--accent-strong); }
+    .btn.primary { background: linear-gradient(120deg, var(--accent), var(--accent-strong)); color: #0b1220; border: none; box-shadow: 0 12px 40px rgba(34,211,238,0.28); }
+    .btn.primary:hover { transform: translateY(-1px); }
+    .btn.danger { background: rgba(244,63,94,0.15); color: #fda4af; border-color: rgba(244,63,94,0.3); }
+    .scholar-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .scholar-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; background: rgba(255,255,255,0.02); box-shadow: var(--shadow); display: grid; gap: 8px; }
+    form { display: grid; gap: 12px; }
+    label { font-weight: 600; color: var(--text); font-size: 14px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
+    th, td { padding: 12px 10px; text-align: left; }
+    th { background: rgba(255,255,255,0.04); border-bottom: 1px solid var(--border); font-size: 13px; letter-spacing: 0.3px; }
+    tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    tr:hover { background: rgba(34,211,238,0.05); }
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; align-items: start; }
+    .muted { color: var(--muted); font-size: 13px; }
+    footer { margin-top: 40px; color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0 40px; }
+    @media (max-width: 720px) {
+      .hero h1 { font-size: 24px; }
+      nav a { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><span class="dot"></span>ScholarLink <span style="font-size:14px; color: var(--accent-strong); margin-left:8px;">系統管理員</span></div>
+      <nav>
+        <a href="admin_scholarships.html">獎助管理</a>
+        <a href="admin_announcements.html">公告管理</a>
+        <a href="admin_accounts.html">帳號管理</a>
+        <a href="admin_settings.html">系統設定</a>
+        <a href="/scholarship/pages/login.html" onclick="logout(); return false;">登出</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>📚 獎助學金管理</h1>
+      <p>管理所有獎助學金項目、設定申請條件與審查流程。</p>
+    </section>
+
+    <section id="scholarships" class="card">
+      <div class="section-title">獎助學金管理 <span class="pill">Scholarship / organization</span></div>
+      <div class="actions" style="margin-bottom:16px;">
+        <a class="btn primary" href="#add-scholarship">+ 新增獎助學金</a>
+        <a class="btn" href="#">匯出清單</a>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="scholarshipTable">
+          <thead>
+            <tr>
+              <th>獎助名稱</th>
+              <th>提供單位</th>
+              <th>金額</th>
+              <th>發放狀態</th>
+              <th>發放時間</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="scholarshipTableBody">
+            <tr>
+              <td colspan="6" style="text-align:center; color: var(--muted);">載入中...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="add-scholarship" class="card">
+      <div class="section-title">新增獎助學金 <span class="pill">Create</span></div>
+      <div class="split">
+        <form id="createForm" onsubmit="createScholarship(event)">
+          <div>
+            <label>獎助名稱 *</label>
+            <input type="text" id="scholarshipName" required placeholder="例如：資訊學院優秀學生獎學金">
+          </div>
+          <div>
+            <label>金額 (NT$) *</label>
+            <input type="number" id="scholarshipAmount" required min="0" step="1000" placeholder="20000">
+          </div>
+          <div>
+            <label>提供機構 ID（選填）</label>
+            <input type="text" id="organizationId" placeholder="例如：ORG001">
+            <p class="muted">若填寫，系統會建立獎學金與機構的關聯。</p>
+          </div>
+          <div>
+            <label>說明</label>
+            <textarea id="scholarshipDescription" placeholder="申請條件、評分方式、補充資訊..."></textarea>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <label style="margin:0; display:flex; gap:8px; align-items:center;">
+              <input type="checkbox" id="publishNow" style="width:auto;"> 建立後立即發放
+            </label>
+            <button class="btn primary" type="submit">建立獎學金</button>
+          </div>
+        </form>
+        <div class="card" style="background: rgba(255,255,255,0.02);">
+          <h4 style="margin:0 0 8px;">小提示</h4>
+          <p class="muted">1. 「建立後立即發放」會將獎學金狀態設為已發放，學生即可查看與申請。</p>
+          <p class="muted">2. 若要稍後再發放，可取消勾選，待審查完成後再按「發放」。</p>
+          <p class="muted">3. 機構 ID 可在「帳號管理」中查詢，格式通常如 ORG001。</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    ScholarLink 系統管理員端 © 2026 · <a href="/scholarship/pages/login.html" style="color:var(--accent-strong); text-decoration:none;">返回登入頁</a>
+  </footer>
+
+  <script>
+    const API_BASE = '/scholarship/api';
+    let currentUser = null;
+    
+    // 頁面載入時獲取獎學金列表
+    async function loadScholarships() {
+      try {
+        const response = await fetch(`${API_BASE}/scholarships?admin=true`);
+        const result = await response.json();
+        
+        if (result.success) {
+          displayScholarships(result.data);
+        } else {
+          showError('無法載入獎學金列表');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showError('載入失敗');
+      }
+    }
+    
+    // 顯示獎學金列表
+    function displayScholarships(scholarships) {
+      const tbody = document.getElementById('scholarshipTableBody');
+      
+      if (scholarships.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--muted);">尚無獎學金資料</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = scholarships.map(s => {
+        const isPublished = s.is_published == 1;
+        const publishDate = s.published_at ? new Date(s.published_at).toLocaleDateString('zh-TW') : '-';
+        const statusColor = isPublished ? 'var(--accent-strong)' : 'var(--muted)';
+        const statusText = isPublished ? '已發放' : '未發放';
+        
+        return `
+          <tr>
+            <td>${s.name}</td>
+            <td>${s.organizations || '-'}</td>
+            <td>$${Number(s.amount).toLocaleString()}</td>
+            <td style="color: ${statusColor};">${statusText}</td>
+            <td>${publishDate}</td>
+            <td>
+              ${isPublished 
+                ? `<button class="btn danger" style="padding:6px 10px; font-size:12px; cursor:pointer;" onclick="unpublishScholarship('${s.name}')">下架</button>`
+                : `<button class="btn primary" style="padding:6px 10px; font-size:12px; cursor:pointer;" onclick="publishScholarship('${s.name}')">發放</button>`
+              }
+              <a class="btn" style="padding:6px 10px; font-size:12px;" href="#edit">編輯</a>
+              <a class="btn danger" style="padding:6px 10px; font-size:12px;" href="#" onclick="deleteScholarship('${s.name}'); return false;">刪除</a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // 發放獎學金
+    async function publishScholarship(name) {
+      if (!confirm(`確定要發放「${name}」嗎？\n發放後學生將可以看到並申請此獎學金。`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/scholarships/${encodeURIComponent(name)}/publish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_id: currentUser?.id })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✓ 獎學金已成功發放！');
+          loadScholarships(); // 重新載入列表
+        } else {
+          alert('❌ 發放失敗：' + result.message);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('❌ 發放失敗，請檢查網路連線');
+      }
+    }
+    
+    // 下架獎學金
+    async function unpublishScholarship(name) {
+      if (!confirm(`確定要下架「${name}」嗎？\n下架後學生將無法看到此獎學金。`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/scholarships/${encodeURIComponent(name)}/unpublish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✓ 獎學金已下架');
+          loadScholarships(); // 重新載入列表
+        } else {
+          alert('❌ 下架失敗：' + result.message);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('❌ 下架失敗，請檢查網路連線');
+      }
+    }
+
+    // 建立新獎學金
+    async function createScholarship(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('scholarshipName').value.trim();
+      const amount = parseFloat(document.getElementById('scholarshipAmount').value);
+      const organizationId = document.getElementById('organizationId').value.trim();
+      const description = document.getElementById('scholarshipDescription').value.trim();
+      const publishNow = document.getElementById('publishNow').checked;
+
+      if (!name || Number.isNaN(amount)) {
+        alert('請輸入完整的獎學金名稱與金額');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/scholarships`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            amount,
+            description,
+            organization_id: organizationId || null,
+            publish: publishNow,
+            admin_id: currentUser?.id
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('✓ 獎學金建立成功');
+          document.getElementById('createForm').reset();
+          loadScholarships();
+          window.location.hash = '#scholarships';
+        } else {
+          alert('❌ 建立失敗：' + (result.message || '未知錯誤'));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('❌ 建立失敗，請檢查網路連線');
+      }
+    }
+    
+    // 刪除獎學金 (預留功能)
+    function deleteScholarship(name) {
+      alert('刪除功能開發中');
+    }
+    
+    // 顯示錯誤
+    function showError(message) {
+      const tbody = document.getElementById('scholarshipTableBody');
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171;">${message}</td></tr>`;
+    }
+    
+    // 頁面載入完成後執行
+    document.addEventListener('DOMContentLoaded', () => {
+      currentUser = checkAuth(['SystemAdministrator']);
+      if (!currentUser) return;
+      loadScholarships();
+    });
+  </script>
+</body>
+</html>

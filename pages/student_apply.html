@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>線上申請獎學金 - ScholarLink</title>
+  <script src="auth.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
     :root {
@@ -151,7 +152,7 @@
         <a href="student.html">返回首頁</a>
         <a href="student_results.html">申請結果</a>
         <a href="student_profile.html">個人資料</a>
-        <a href="index.html">登出</a>
+        <a href="/scholarship/pages/login.html" onclick="logout(); return false;">登出</a>
       </nav>
     </div>
   </header>
@@ -165,56 +166,22 @@
     <section class="card">
       <div class="section-title">申請表單 <span class="pill">apply data</span></div>
       <div class="split">
-        <form>
-          <div>
-            <label>姓名</label>
-            <input type="text" value="王小明" required>
-          </div>
-          <div>
-            <label>學號</label>
-            <input type="text" value="A123456789" disabled style="opacity:0.6;">
-          </div>
-          <div>
-            <label>聯絡 Email</label>
-            <input type="email" value="student@example.edu" required>
-          </div>
-          <div>
-            <label>聯絡電話</label>
-            <input type="text" value="0912345678" required>
-          </div>
+        <form id="applyForm" onsubmit="submitApplication(event)">
           <div>
             <label>申請獎助學金</label>
-            <select required>
-              <option value="">請選擇</option>
-              <option>境外學生助學金</option>
-              <option>弱勢助學金</option>
-              <option>身心障礙學生助學金</option>
-            </select>
+            <input type="text" id="scholarshipName" disabled style="opacity:0.6;" required>
+            <p class="muted">此欄位已自動填入您選擇的獎學金</p>
           </div>
           <div>
-            <label>成績（GPA / 總分）</label>
-            <input type="text" placeholder="例如：3.8 或 85.5" required>
+            <label>GPA</label>
+            <input type="number" id="gpa" step="0.01" min="0" max="4" placeholder="例如：3.8" required>
           </div>
           <div>
-            <label>操行分數 / 排名</label>
-            <input type="text" placeholder="例如：88 / 15" required>
-          </div>
-          <div>
-            <label>申請條件說明</label>
-            <textarea placeholder="請說明您符合哪些申請資格"></textarea>
-          </div>
-          <div>
-            <label>上傳申請附件</label>
-            <input type="file" multiple>
-            <p class="muted">支援成績單、證明文件，單檔上限 10MB，支援 PDF/JPG/PNG。</p>
-          </div>
-          <div>
-            <label>導師推薦人（可選）</label>
-            <input type="text" placeholder="導師姓名或 email">
+            <label>成績分數</label>
+            <input type="number" id="score" step="0.01" min="0" max="100" placeholder="例如：85.5" required>
           </div>
           <div class="actions">
-            <a class="btn" href="student.html">取消</a>
-            <button class="btn" type="button">儲存草稿</button>
+            <a class="btn" href="student_dashboard.html">取消</a>
             <button class="btn primary" type="submit">送出申請</button>
           </div>
         </form>
@@ -232,5 +199,75 @@
   <footer>
     ScholarLink 學生端 © 2026 · <a href="student.html" style="color:var(--accent-strong); text-decoration:none;">返回首頁</a>
   </footer>
+
+  <script>
+    // 檢查認證
+    const currentUser = checkAuth(['Student']);
+    if (!currentUser) {
+      throw new Error('Unauthorized');
+    }
+
+    const API_BASE = '/scholarship/api';
+
+    // 從 URL 取得獎學金名稱
+    function getScholarshipFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('scholarship');
+    }
+
+    // 頁面載入時自動填入獎學金名稱
+    document.addEventListener('DOMContentLoaded', () => {
+      const scholarshipName = getScholarshipFromURL();
+      const scholarshipInput = document.getElementById('scholarshipName');
+      
+      if (scholarshipName && scholarshipInput) {
+        scholarshipInput.value = decodeURIComponent(scholarshipName);
+      } else if (scholarshipInput) {
+        // 如果沒有從 URL 取得，顯示提示
+        scholarshipInput.value = '請從獎學金列表選擇申請';
+      }
+    });
+
+    // 提交申請
+    async function submitApplication(event) {
+      event.preventDefault();
+      
+      const scholarshipName = document.getElementById('scholarshipName').value;
+      const gpa = parseFloat(document.getElementById('gpa').value);
+      const score = parseFloat(document.getElementById('score').value);
+
+      if (!scholarshipName || scholarshipName === '請從獎學金列表選擇申請') {
+        alert('請先選擇要申請的獎學金');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/applications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            student_id: currentUser.id,
+            scholarship_name: scholarshipName,
+            gpa: gpa,
+            score: score
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ 申請已成功送出！');
+          window.location.href = 'student_results.html';
+        } else {
+          alert('❌ 申請失敗：' + (result.message || '請稍後再試'));
+        }
+      } catch (error) {
+        console.error('提交申請錯誤:', error);
+        alert('❌ 提交時發生錯誤，請檢查網路連線或稍後再試');
+      }
+    }
+  </script>
 </body>
 </html>

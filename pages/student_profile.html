@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>修改基本資料 - ScholarLink</title>
+  <script src="auth.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
     :root {
@@ -150,7 +151,7 @@
         <a href="student.html">返回首頁</a>
         <a href="student_apply.html">線上申請</a>
         <a href="student_results.html">申請結果</a>
-        <a href="index.html">登出</a>
+        <a href="/scholarship/pages/login.html" onclick="logout(); return false;">登出</a>
       </nav>
     </div>
   </header>
@@ -236,12 +237,23 @@
           <p class="muted">• 身分別需上傳相關證明（如低收證明、身障手冊、僑生居留證等）</p>
           <p class="muted">• 資料變更後請確認申請表是否需同步更新</p>
           <p class="muted">• 學號為系統識別碼，無法自行修改</p>
-          <div style="margin-top:12px;">
-            <label style="font-size:13px;">上傳身分證明文件</label>
-            <input type="file" style="margin-top:6px;">
-          </div>
         </div>
       </div>
+    </section>
+
+    <section class="card" style="background: rgba(34,211,238,0.06); border-color: rgba(34,211,238,0.4);">
+      <div class="section-title" style="font-size:18px; margin-bottom:12px;">📄 身分證明文件上傳</div>
+      <p class="muted" style="margin-bottom:14px;">請上傳相關身分證明文件（如低收證明、身障手冊、僑生居留證等）</p>
+      <form id="identityProofForm" style="display: grid; gap: 12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600;">選擇檔案（JPG/PNG/PDF，最大 5MB）</label>
+          <input type="file" id="identityProofFile" accept=".jpg,.jpeg,.png,.pdf" style="margin-top:6px;">
+          <p class="muted" style="font-size:12px; margin-top:4px;">支援格式：JPG、PNG、PDF</p>
+        </div>
+        <button type="submit" class="btn primary" style="padding:8px 14px; font-size:13px; width: fit-content;">上傳證明文件</button>
+      </form>
+      <div id="uploadStatus" style="display:none; margin-top:12px; padding:10px; border-radius:8px; font-size:13px;"></div>
+      <div id="proofList" style="margin-top:14px;"></div>
     </section>
   </div>
 
@@ -251,15 +263,21 @@
 
   <script>
     // 設定 API 基礎 URL
-    const API_BASE = 'http://localhost:3000/api';
+    const API_BASE = '/scholarship/api';
     
-    // 當前學生ID（實際應用中應從登入系統取得）
-    const CURRENT_STUDENT_ID = 'S001';
+    // 當前學生ID（從登入系統取得）
+    let currentUser = null;
+
+    // 頁面載入時檢查認證
+    currentUser = checkAuth(['Student']);
+    if (!currentUser) {
+      throw new Error('Unauthorized');
+    }
 
     // 載入學生資料
     async function loadStudentData() {
       try {
-        const response = await fetch(`${API_BASE}/student/${CURRENT_STUDENT_ID}`);
+        const response = await fetch(`${API_BASE}/student/${currentUser.id}`);
         const result = await response.json();
 
         if (!result.success) {
@@ -300,10 +318,125 @@
         // 顯示表單
         document.getElementById('loading').style.display = 'none';
         document.getElementById('profileForm').style.display = 'grid';
+        
+        // 載入已上傳的證明文件
+        loadIdentityProofs();
 
       } catch (error) {
         console.error('載入錯誤:', error);
         showError('載入資料時發生錯誤，請稍後再試');
+      }
+    }
+
+    // 載入已上傳的身分證明檔案
+    async function loadIdentityProofs() {
+      try {
+        const response = await fetch(`${API_BASE}/identity-proof`);
+        const result = await response.json();
+        
+        if (!result.success || !result.data) return;
+        
+        // 過濾出當前學生的檔案
+        const myProofs = result.data.filter(p => p.student_id === currentUser.id);
+        
+        const listDiv = document.getElementById('proofList');
+        if (myProofs.length === 0) {
+          listDiv.innerHTML = '<p class="muted" style="font-size:12px;">尚未上傳任何證明文件</p>';
+          return;
+        }
+        
+        listDiv.innerHTML = '<div style="font-size:12px; color:var(--accent-strong); margin-bottom:8px;">✓ 已上傳的證明文件：</div>' +
+          myProofs.map(p => `
+            <div style="padding:8px; background:rgba(34,211,238,0.1); border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span>${p.file_name}</span>
+              <span class="muted">${(p.file_size / 1024).toFixed(0)} KB</span>
+            </div>
+          `).join('');
+      } catch (err) {
+        console.error('載入檔案列表失敗:', err);
+      }
+    }
+
+    // 處理身分證明檔案上傳
+    async function uploadIdentityProof(event) {
+      event.preventDefault();
+      
+      console.log('uploadIdentityProof called');
+      console.log('currentUser:', currentUser);
+      
+      const fileInput = document.getElementById('identityProofFile');
+      const file = fileInput.files[0];
+      
+      console.log('Upload triggered:', { file, currentUser });
+      
+      if (!file) {
+        alert('請選擇檔案');
+        return;
+      }
+      
+      if (!currentUser || !currentUser.id) {
+        alert('錯誤：未能取得學生ID，請重新登入');
+        console.error('currentUser is invalid:', currentUser);
+        return;
+      }
+      
+      if (file.size > 5242880) {
+        alert('檔案過大，最大限制為 5MB');
+        return;
+      }
+      
+      try {
+        const formData = new FormData();
+        formData.append('student_id', currentUser.id);
+        formData.append('file', file);
+        
+        console.log('FormData prepared:', { 
+          student_id: currentUser.id, 
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type 
+        });
+        
+        const statusDiv = document.getElementById('uploadStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'rgba(59,130,246,0.2)';
+        statusDiv.style.color = '#93c5fd';
+        statusDiv.textContent = '上傳中...';
+        
+        const url = `${API_BASE}/identity-proof`;
+        console.log('Uploading to:', url);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData
+        });
+        
+        console.log('Response received:', { status: response.status, ok: response.ok });
+        
+        const result = await response.json();
+        console.log('Response JSON:', result);
+        
+        if (result.success) {
+          statusDiv.style.background = 'rgba(34,197,94,0.2)';
+          statusDiv.style.color = '#86efac';
+          statusDiv.textContent = '✓ 上傳成功';
+          fileInput.value = '';
+          setTimeout(() => {
+            statusDiv.style.display = 'none';
+            loadIdentityProofs();
+          }, 2000);
+        } else {
+          statusDiv.style.background = 'rgba(248,113,113,0.2)';
+          statusDiv.style.color = '#fecdd3';
+          statusDiv.textContent = '❌ ' + result.message;
+        }
+      } catch (err) {
+        console.error('上傳失敗:', err);
+        const statusDiv = document.getElementById('uploadStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = 'rgba(248,113,113,0.2)';
+        statusDiv.style.color = '#fecdd3';
+        statusDiv.textContent = '❌ 上傳失敗：' + err.message;
       }
     }
 
@@ -319,11 +452,24 @@
 
     // 身分別改變時切換欄位
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOMContentLoaded - setting up event listeners');
+      
       const identitySelect = document.getElementById('identity');
       if (identitySelect) {
         identitySelect.addEventListener('change', (e) => {
           toggleIdentityFields(e.target.value);
         });
+      }
+      
+      // 綁定檔案上傳表單
+      const identityProofForm = document.getElementById('identityProofForm');
+      console.log('Identity proof form found:', identityProofForm);
+      
+      if (identityProofForm) {
+        console.log('Adding submit event listener to identity proof form');
+        identityProofForm.addEventListener('submit', uploadIdentityProof);
+      } else {
+        console.warn('Identity proof form not found in DOM');
       }
     });
 
@@ -357,7 +503,7 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE}/student/${CURRENT_STUDENT_ID}`, {
+        const response = await fetch(`${API_BASE}/student/${currentUser.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -387,14 +533,36 @@
       document.getElementById('loading').style.display = 'none';
     }
 
-    // 頁面載入時執行
+    // 頁面載入時執行 - 整合所有初始化代碼
     window.addEventListener('DOMContentLoaded', () => {
+      console.log('Main DOMContentLoaded event fired');
+      
+      // 1. 載入學生資料
       loadStudentData();
       
-      // 綁定表單提交事件
+      // 2. 綁定主表單提交事件
       const form = document.getElementById('studentForm');
       if (form) {
         form.addEventListener('submit', saveStudentData);
+      }
+      
+      // 3. 身分別改變時切換欄位
+      const identitySelect = document.getElementById('identity');
+      if (identitySelect) {
+        identitySelect.addEventListener('change', (e) => {
+          toggleIdentityFields(e.target.value);
+        });
+      }
+      
+      // 4. 綁定檔案上傳表單
+      const identityProofForm = document.getElementById('identityProofForm');
+      console.log('Identity proof form found:', identityProofForm);
+      
+      if (identityProofForm) {
+        console.log('Adding submit event listener to identity proof form');
+        identityProofForm.addEventListener('submit', uploadIdentityProof);
+      } else {
+        console.warn('Identity proof form not found in DOM');
       }
     });
   </script>

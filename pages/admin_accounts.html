@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系統管理員端 - ScholarLink</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --surface: #0b1220;
+      --accent: #7dd3fc;
+      --accent-strong: #22d3ee;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.06), transparent 25%),
+                  radial-gradient(circle at 80% 10%, rgba(14,165,233,0.07), transparent 26%),
+                  radial-gradient(circle at 50% 80%, rgba(56,189,248,0.05), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      background: rgba(15,23,42,0.8);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .brand .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 0 18px rgba(125,211,252,0.6);
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 18px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    nav a:hover { color: var(--accent-strong); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 22px 60px; }
+    .grid { display: grid; gap: 18px; }
+    .card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 18px 20px;
+      box-shadow: var(--shadow);
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(125,211,252,0.15);
+      color: var(--accent-strong);
+      border: 1px solid rgba(125,211,252,0.35);
+    }
+    .hero {
+      margin: 28px 0 10px;
+      padding: 26px;
+      border-radius: 16px;
+      background: linear-gradient(120deg, rgba(14,165,233,0.25), rgba(8,47,73,0.65)),
+                  linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.8));
+      border: 1px solid rgba(125,211,252,0.35);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 12px;
+    }
+    .hero h1 { margin: 0; font-size: 28px; letter-spacing: 0.3px; }
+    .hero p { margin: 0; color: var(--muted); max-width: 760px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn {
+      padding: 11px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.2px;
+      transition: all 0.2s ease;
+      display: inline-block;
+      cursor: pointer;
+    }
+    .btn:hover { border-color: var(--accent-strong); color: var(--accent-strong); }
+    .btn.primary { background: linear-gradient(120deg, var(--accent), var(--accent-strong)); color: #0b1220; border: none; box-shadow: 0 12px 40px rgba(34,211,238,0.28); }
+    .btn.primary:hover { transform: translateY(-1px); }
+    .btn.danger { background: rgba(244,63,94,0.15); color: #fda4af; border-color: rgba(244,63,94,0.3); }
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; align-items: start; }
+    form { display: grid; gap: 12px; }
+    label { font-weight: 600; color: var(--text); font-size: 14px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 12px rgba(125,211,252,0.2); }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
+    th, td { padding: 12px 10px; text-align: left; }
+    th { background: rgba(255,255,255,0.04); border-bottom: 1px solid var(--border); font-size: 13px; letter-spacing: 0.3px; }
+    tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    tr:hover { background: rgba(34,211,238,0.05); }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .badge.student { background: rgba(125,211,252,0.2); color: var(--accent); }
+    .badge.teacher { background: rgba(34,197,94,0.2); color: #86efac; }
+    .badge.organization { background: rgba(168,85,247,0.2); color: #d8b4fe; }
+    .badge.admin { background: rgba(244,63,94,0.2); color: #fda4af; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--card); border-radius: var(--radius); padding: 24px; max-width: 500px; width: 90%; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .modal-header h2 { margin: 0; font-size: 18px; }
+    .modal-close { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+    .success-msg, .error-msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+    .success-msg { background: rgba(34,197,94,0.2); color: #86efac; }
+    .error-msg { background: rgba(244,63,94,0.2); color: #fda4af; }
+    .muted { color: var(--muted); font-size: 13px; }
+    footer { margin-top: 40px; color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0 40px; }
+    @media (max-width: 720px) {
+      .hero h1 { font-size: 24px; }
+      nav a { display: none; }
+      .split { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><span class="dot"></span>ScholarLink <span style="font-size:14px; color: var(--accent-strong); margin-left:8px;">系統管理員</span></div>
+      <nav>
+        <a href="admin_scholarships.html">獎助管理</a>
+        <a href="admin_announcements.html">公告管理</a>
+        <a href="admin_identity_proof.html">身份文件管理</a>
+        <a href="admin_accounts.html">帳號管理</a>
+        <a href="/scholarship/pages/login.html">登出</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>👥 帳號與權限管理</h1>
+      <p>管理系統使用者帳號、角色與權限設定。</p>
+    </section>
+
+    <!-- 新增帳號表單 -->
+    <section id="add-account-form" class="card">
+      <div class="section-title">新增帳號 <span class="pill">Create new account</span></div>
+      <div id="form-msg"></div>
+      <form id="accountForm">
+        <div class="split">
+          <div>
+            <label for="accountId">帳號 ID *</label>
+            <input type="text" id="accountId" name="id" placeholder="例：S001、T001、ORG001" required>
+            <p class="muted">系統內唯一識別，建立後無法修改</p>
+          </div>
+          <div>
+            <label for="accountName">姓名 *</label>
+            <input type="text" id="accountName" name="name" placeholder="填入使用者姓名" required>
+          </div>
+        </div>
+        <div class="split">
+          <div>
+            <label for="accountEmail">Email *</label>
+            <input type="email" id="accountEmail" name="email" placeholder="user@example.edu" required>
+          </div>
+          <div>
+            <label for="accountType">角色 *</label>
+            <select id="accountType" name="type" required>
+              <option value="">請選擇角色</option>
+              <option value="Student">學生 (Student)</option>
+              <option value="Teacher">教師 (Teacher)</option>
+              <option value="Organization">審查單位 (Organization)</option>
+              <option value="SystemAdministrator">系統管理員 (Admin)</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions" style="margin-top: 12px;">
+          <button class="btn primary" type="submit">新增帳號</button>
+          <button class="btn" type="reset">清除</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 帳號列表 -->
+    <section id="accounts-list" class="card">
+      <div class="section-title">現有帳號列表 <span class="pill">System accounts</span></div>
+      <div id="list-msg"></div>
+      <div style="overflow-x:auto;">
+        <table id="accountsTable">
+          <thead>
+            <tr>
+              <th>帳號 ID</th>
+              <th>姓名</th>
+              <th>角色</th>
+              <th>Email</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="5" style="text-align:center; color: var(--muted);">載入中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    ScholarLink 系統管理員端 © 2026 · <a href="/scholarship/pages/login.html" style="color:var(--accent-strong); text-decoration:none;">返回登入頁</a>
+  </footer>
+
+  <script>
+    const API_BASE = 'http://localhost/scholarship/api';
+
+    // 新增帳號
+    document.getElementById('accountForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msgDiv = document.getElementById('form-msg');
+      msgDiv.innerHTML = '';
+
+      const id = document.getElementById('accountId').value;
+      const name = document.getElementById('accountName').value;
+      const email = document.getElementById('accountEmail').value;
+      const type = document.getElementById('accountType').value;
+
+      try {
+        const response = await fetch(`${API_BASE}/user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id, name, email, type })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          msgDiv.innerHTML = `<div class="error-msg">❌ ${data.message || '新增失敗'}</div>`;
+        } else {
+          msgDiv.innerHTML = `<div class="success-msg">✓ 帳號已新增成功（預設密碼：${data.data.tempPassword}）</div>`;
+          document.getElementById('accountForm').reset();
+          setTimeout(() => { msgDiv.innerHTML = ''; loadAccounts(); }, 2000);
+        }
+      } catch (err) {
+        msgDiv.innerHTML = `<div class="error-msg">❌ ${err.message}</div>`;
+      }
+    });
+
+    // 角色對應中文
+    function getRoleLabel(type) {
+      const labels = {
+        'Student': '學生',
+        'Teacher': '教師',
+        'Organization': '審查單位',
+        'SystemAdministrator': '系統管理員'
+      };
+      return labels[type] || type;
+    }
+
+    // 獲取角色徽章
+    function getRoleBadge(type) {
+      const badges = {
+        'Student': 'student',
+        'Teacher': 'teacher',
+        'Organization': 'organization',
+        'SystemAdministrator': 'admin'
+      };
+      return badges[type] || 'student';
+    }
+
+    // 載入帳號列表
+    async function loadAccounts() {
+      const tbody = document.getElementById('tableBody');
+      try {
+        const response = await fetch(`${API_BASE}/users`);
+        const data = await response.json();
+        
+        if (!response.ok || !data.users) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--muted);">無法載入帳號</td></tr>';
+          return;
+        }
+
+        if (data.users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--muted);">暫無帳號</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.users.map(user => `
+          <tr>
+            <td><strong>${user.id}</strong></td>
+            <td>${user.name}</td>
+            <td><span class="badge ${getRoleBadge(user.type)}">${getRoleLabel(user.type)}</span></td>
+            <td><small>${user.email}</small></td>
+            <td>
+              <button class="btn danger" style="padding:6px 10px; font-size:12px;" onclick="deleteAccount('${user.id}')">刪除</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color: var(--text);">❌ ${err.message}</td></tr>`;
+      }
+    }
+
+    // 刪除帳號
+    function deleteAccount(userId) {
+      if (!confirm(`確定要刪除帳號 ${userId} 嗎？此動作無法復原。`)) {
+        return;
+      }
+      
+      fetch(`${API_BASE}/user/${userId}`, {
+        method: 'DELETE'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('帳號已刪除');
+          loadAccounts();
+        } else {
+          alert(`刪除失敗：${data.message}`);
+        }
+      })
+      .catch(err => alert(`錯誤：${err.message}`));
+    }
+
+    // 頁面載入時取得帳號列表
+    window.addEventListener('load', loadAccounts);
+  </script>
+</body>
+</html>

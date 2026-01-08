@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>查看申請結果 - ScholarLink</title>
+  <script src="auth.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
     :root {
@@ -141,10 +142,11 @@
     <div class="nav">
       <div class="brand"><span class="dot"></span>ScholarLink <span style="font-size:14px; color: var(--accent-strong); margin-left:8px;">學生端</span></div>
       <nav>
-        <a href="student.html">返回首頁</a>
-        <a href="student_apply.html">線上申請</a>
-        <a href="student_profile.html">個人資料</a>
-        <a href="index.html">登出</a>
+        <a href="student.html">獎學金資訊</a>
+        <a href="student_profile_apache.html">個人資料</a>
+        <a href="student_dashboard.html">線上申請</a>
+        <a href="student_results.html">申請結果</a>
+        <a href="/scholarship/pages/login.html" onclick="logout(); return false;">登出</a>
       </nav>
     </div>
   </header>
@@ -162,38 +164,15 @@
           <thead>
             <tr>
               <th>獎助名稱</th>
-              <th>送出日</th>
+              <th>申請日期</th>
+              <th>金額</th>
               <th>狀態</th>
-              <th>審查備註</th>
-              <th>結果</th>
-              <th>操作</th>
+              <th>成績</th>
+              <th>GPA</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>境外學生助學金</td>
-              <td>2026/01/06</td>
-              <td><span class="status review">審查中</span></td>
-              <td>資格審核中</td>
-              <td>—</td>
-              <td><a class="btn" style="padding:6px 12px; font-size:12px;" href="#">查看詳情</a></td>
-            </tr>
-            <tr>
-              <td>弱勢助學金</td>
-              <td>2026/01/03</td>
-              <td><span class="status fail">補件中</span></td>
-              <td>需補上低收入證明</td>
-              <td>—</td>
-              <td><a class="btn" style="padding:6px 12px; font-size:12px;" href="student_apply.html">前往補件</a></td>
-            </tr>
-            <tr>
-              <td>身心障礙助學金</td>
-              <td>2025/12/18</td>
-              <td><span class="status pass">通過</span></td>
-              <td>審查通過，待撥款</td>
-              <td>$25,000</td>
-              <td><a class="btn" style="padding:6px 12px; font-size:12px;" href="#">下載證明</a></td>
-            </tr>
+          <tbody id="applicationBody">
+            <tr><td colspan="6" style="text-align:center; color:var(--muted);">載入中...</td></tr>
           </tbody>
         </table>
       </div>
@@ -206,5 +185,75 @@
   <footer>
     ScholarLink 學生端 © 2026 · <a href="student.html" style="color:var(--accent-strong); text-decoration:none;">返回首頁</a>
   </footer>
+
+  <script>
+    const currentUser = checkAuth(['Student']);
+    if (!currentUser) {
+      throw new Error('Unauthorized');
+    }
+
+    const API_BASE = '/scholarship/api';
+
+    function stateLabel(state) {
+      const labels = {
+        'Pending': '待審核',
+        'Approved': '已通過',
+        'Rejected': '未通過',
+        'Under Review': '審查中'
+      };
+      return labels[state] || state;
+    }
+
+    function stateClass(state) {
+      if (state === 'Approved') return 'pass';
+      if (state === 'Rejected') return 'fail';
+      return 'review';
+    }
+
+    function renderApplications(items) {
+      const body = document.getElementById('applicationBody');
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted);">目前沒有申請記錄</td></tr>';
+        return;
+      }
+      body.innerHTML = items.map(app => {
+        const date = app.apply_date ? new Date(app.apply_date).toLocaleDateString('zh-TW') : '-';
+        const amount = app.amount ? '$' + parseInt(app.amount).toLocaleString() : '-';
+        const state = stateLabel(app.apply_state);
+        const stateStyle = stateClass(app.apply_state);
+        return `
+          <tr>
+            <td>${app.scholarship_name || '-'}</td>
+            <td>${date}</td>
+            <td>${amount}</td>
+            <td><span class="status ${stateStyle}">${state}</span></td>
+            <td>${app.score || '-'}</td>
+            <td>${app.gpa || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderError(message) {
+      document.getElementById('applicationBody').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#fca5a5;">${message}</td></tr>`;
+    }
+
+    async function loadApplications() {
+      try {
+        const res = await fetch(`${API_BASE}/student/${currentUser.id}/applications`);
+        const result = await res.json();
+        if (!result.success) throw new Error(result.message || '載入申請記錄失敗');
+        renderApplications(result.data || []);
+      } catch (err) {
+        renderError(err.message || '載入申請記錄失敗');
+      }
+    }
+
+    // 初始加載
+    document.addEventListener('DOMContentLoaded', loadApplications);
+    
+    // 每 30 秒自動刷新一次（查看審查結果更新）
+    setInterval(loadApplications, 30000);
+  </script>
 </body>
 </html>

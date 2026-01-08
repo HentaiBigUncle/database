@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>獎學金發放機構端 - ScholarLink</title>
+  <script src="auth.js"></script>
+  <script>
+    // 若為組織角色，直接導向待審申請頁，避免停留在此主頁
+    (function(){
+      try {
+        const currentUser = typeof checkAuth === 'function' ? checkAuth(['Organization']) : null;
+        if (currentUser) {
+          window.location.replace('/scholarship/pages/organization_applications.html');
+        }
+      } catch (e) {
+        console.warn('Redirect check failed:', e);
+      }
+    })();
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --surface: #0b1220;
+      --accent: #7dd3fc;
+      --accent-strong: #22d3ee;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --warn: #f59e0b;
+      --success: #22c55e;
+      --danger: #f43f5e;
+      --border: #1f2937;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.06), transparent 25%),
+                  radial-gradient(circle at 80% 10%, rgba(14,165,233,0.07), transparent 26%),
+                  radial-gradient(circle at 50% 80%, rgba(56,189,248,0.05), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      background: rgba(15,23,42,0.8);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .brand .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 0 18px rgba(125,211,252,0.6);
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 18px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    nav a:hover { color: var(--accent-strong); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 22px 60px; }
+    .grid { display: grid; gap: 18px; }
+    .card {
+      background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 18px 20px;
+      box-shadow: var(--shadow);
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(125,211,252,0.15);
+      color: var(--accent-strong);
+      border: 1px solid rgba(125,211,252,0.35);
+    }
+    .hero {
+      margin: 28px 0 10px;
+      padding: 26px;
+      border-radius: 16px;
+      background: linear-gradient(120deg, rgba(14,165,233,0.25), rgba(8,47,73,0.65)),
+                  linear-gradient(180deg, rgba(15,23,42,0.9), rgba(15,23,42,0.8));
+      border: 1px solid rgba(125,211,252,0.35);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 12px;
+    }
+    .hero h1 { margin: 0; font-size: 28px; letter-spacing: 0.3px; }
+    .hero p { margin: 0; color: var(--muted); max-width: 760px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn {
+      padding: 11px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.2px;
+      transition: all 0.2s ease;
+      display: inline-block;
+    }
+    .btn:hover { border-color: var(--accent-strong); color: var(--accent-strong); }
+    .btn.primary { background: linear-gradient(120deg, var(--accent), var(--accent-strong)); color: #0b1220; border: none; box-shadow: 0 12px 40px rgba(34,211,238,0.28); }
+    .btn.primary:hover { transform: translateY(-1px); }
+    .announcement-list { display: grid; gap: 12px; }
+    .announcement-item {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .announcement-item strong { color: var(--text); }
+    .announcement-meta { color: var(--muted); font-size: 13px; }
+    .badge { padding: 4px 8px; border-radius: 8px; font-size: 12px; background: rgba(34,211,238,0.15); color: var(--accent-strong); }
+    form { display: grid; gap: 12px; }
+    label { font-weight: 600; color: var(--text); font-size: 14px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
+    th, td { padding: 12px 10px; text-align: left; }
+    th { background: rgba(255,255,255,0.04); border-bottom: 1px solid var(--border); font-size: 13px; letter-spacing: 0.3px; }
+    tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    tr:hover { background: rgba(34,211,238,0.05); }
+    .status { padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; display: inline-block; }
+    .status.pending { background: rgba(245,158,11,0.18); color: #fbbf24; }
+    .status.review { background: rgba(59,130,246,0.18); color: #93c5fd; }
+    .status.needDoc { background: rgba(244,63,94,0.18); color: #fecdd3; }
+    .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; align-items: start; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+    }
+    .stat-num { font-size: 32px; font-weight: 700; color: var(--accent-strong); margin: 8px 0; }
+    .stat-label { color: var(--muted); font-size: 13px; }
+    footer { margin-top: 40px; color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0 40px; }
+    @media (max-width: 720px) {
+      .hero h1 { font-size: 24px; }
+      nav a { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><span class="dot"></span>ScholarLink <span style="font-size:14px; color: var(--accent-strong); margin-left:8px;">獎學金發放機構端</span></div>
+      <nav>
+        <a href="/scholarship/pages/organization_applications.html">待審申請</a>
+        <a href="/scholarship/pages/organization_review.html">審查作業</a>
+        <a href="/scholarship/pages/organization_announcements.html">公告</a>
+        <a href="/scholarship/pages/login.html" onclick="logout(); return false;">登出</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>🏛️ 獎學金審查管理系統</h1>
+      <p>國際事務處，您好！在這裡可以審核學生申請資料、核定結果、發布審查公告。</p>
+    </section>
+
+    <section class="stats" id="statsContainer">
+      <div class="stat-card">
+        <div class="stat-label">待審核</div>
+        <div class="stat-num" id="pendingCount">-</div>
+        <div class="muted">筆申請</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">審查中</div>
+        <div class="stat-num" id="reviewCount">-</div>
+        <div class="muted">筆申請</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">已通過</div>
+        <div class="stat-num" id="approvedCount">-</div>
+        <div class="muted">筆申請</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">核定金額</div>
+        <div class="stat-num" id="totalAmount">-</div>
+        <div class="muted">已核定</div>
+      </div>
+    </section>
+
+    <!-- 公告移至獨立頁面 organization_announcements.html -->
+
+    <!-- 待審申請移至獨立頁面 organization_applications.html -->
+
+    <!-- 審查作業移至獨立頁面 organization_review.html -->
+
+    <!-- 歷史記錄已移除 -->
+  </div>
+
+  <footer>
+    ScholarLink 獎學金發放機構端 © 2026 · <a href="index.html" style="color:var(--accent-strong); text-decoration:none;">返回登入頁</a>
+  </footer>
+
+  <script>
+    const API_BASE = '/scholarship/api';
+    
+    async function loadData() {
+      try {
+        // 檢查用戶登入（Organization 角色）
+        const currentUser = checkAuth(['Organization']);
+        if (!currentUser) {
+          // checkAuth 會自動重定向，這裡不需要做什麼
+          return;
+        }
+
+        // 直接導向待審申請頁
+        window.location.href = '/scholarship/pages/organization_applications.html';
+        return;
+      } catch (err) {
+        console.error('載入錯誤:', err);
+        document.body.innerHTML = `<div style="padding: 40px; color: var(--danger);">發生錯誤: ${err.message}</div>`;
+      }
+    }
+    
+    async function loadStats(orgId) {
+      try {
+        const res = await fetch(`${API_BASE}/organization/${orgId}/stats`);
+        const result = await res.json();
+        
+        if (result.success && result.data) {
+          const stats = result.data;
+          document.getElementById('pendingCount').textContent = stats.pending_count || '0';
+          document.getElementById('reviewCount').textContent = stats.review_count || '0';
+          document.getElementById('approvedCount').textContent = stats.approved_count || '0';
+          document.getElementById('totalAmount').textContent = stats.total_approved_amount ? `$${Math.round(stats.total_approved_amount).toLocaleString()}` : '$0';
+        }
+      } catch (err) {
+        console.error('載入統計數據失敗:', err);
+      }
+    }
+    
+    async function loadAnnouncements() {
+      try {
+        const res = await fetch(`${API_BASE}/announcements`);
+        const result = await res.json();
+        
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          const container = document.getElementById('announcementsList');
+          container.innerHTML = result.data.slice(0, 3).map(item => `
+            <div class="announcement-item">
+              <div>
+                <strong>${item.title || '未命名'}</strong>
+                <div class="announcement-meta">${formatDate(item.publish_date)} · ${item.publisher_name || '系統'}</div>
+              </div>
+              <span class="badge">公告</span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('載入公告失敗:', err);
+      }
+    }
+    
+    async function loadApplications(orgId) {
+      try {
+        const res = await fetch(`${API_BASE}/organization/${orgId}/applications`);
+        const result = await res.json();
+        
+        if (result.success && Array.isArray(result.data)) {
+          // 只顯示待審核和審查中的申請
+          const pendingApplications = result.data.filter(app => 
+            app.apply_state === 'Pending' || app.apply_state === 'Under Review'
+          );
+          
+          const tbody = document.getElementById('applicationsTable');
+          
+          if (pendingApplications.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">沒有待審核申請</td></tr>';
+            return;
+          }
+          
+          tbody.innerHTML = pendingApplications.map((app, idx) => {
+            const statusClass = getStatusClass(app.apply_state);
+            const statusText = getStatusText(app.apply_state);
+            
+            return `
+              <tr>
+                <td>${app.id}</td>
+                <td>${app.student_name || '未知'}<br><span class="muted">${app.student_id || ''}</span></td>
+                <td>${app.scholarship_name}</td>
+                <td>${formatDate(app.apply_date)}</td>
+                <td>${app.gpa || '-'}</td>
+                <td><span class="status ${statusClass}">${statusText}</span></td>
+                <td><a class="btn" style="padding:6px 12px; font-size:12px; cursor: pointer;" onclick="openReview(event, ${JSON.stringify(app).replace(/"/g, '&quot;')})">檢視</a></td>
+              </tr>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        console.error('載入申請列表失敗:', err);
+        document.getElementById('applicationsTable').innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px;">載入失敗: ${err.message}</td></tr>`;
+      }
+    }
+    
+    function getStatusClass(state) {
+      const classMap = {
+        'Pending': 'pending',
+        'Under Review': 'review',
+        'Approved': 'pending',
+        'Rejected': 'needDoc'
+      };
+      return classMap[state] || 'pending';
+    }
+    
+    function getStatusText(state) {
+      const textMap = {
+        'Pending': '待審',
+        'Under Review': '審查中',
+        'Approved': '已通過',
+        'Rejected': '已拒'
+      };
+      return textMap[state] || state;
+    }
+    
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
+    }
+    
+    function openReview(event, application) {
+      event.preventDefault();
+      // 設置審查表單中的申請數據
+      document.getElementById('reviewApplicationId').value = application.id;
+      document.getElementById('reviewAmount').value = application.amount || '';
+      document.getElementById('reviewDecision').value = '';
+      document.getElementById('reviewComment').value = '';
+      
+      // 滾動到審查區域
+      document.getElementById('review').scrollIntoView({ behavior: 'smooth' });
+      
+      // 更新申請摘要
+      const summaryDiv = document.querySelector('.announcement-item');
+      if (summaryDiv) {
+        summaryDiv.innerHTML = `
+          <div>
+            <strong>${application.student_name} · ${application.scholarship_name}</strong>
+            <div class="announcement-meta">學號：${application.student_id} · 申請編號：${application.id}</div>
+            <div class="announcement-meta">GPA: ${application.gpa || '-'} · 成績：${application.score || '-'} · 家庭收入：${application.family_income ? '$' + application.family_income : '未提供'}</div>
+          </div>
+        `;
+      }
+    }
+    
+    async function submitReview(event) {
+      event.preventDefault();
+      
+      const applicationId = document.getElementById('reviewApplicationId').value;
+      const currentUser = checkAuth(['Organization']);
+      
+      if (!applicationId || !currentUser) {
+        alert('請先選擇要審查的申請');
+        return;
+      }
+      
+      const reviewData = {
+        organization_id: currentUser.id,
+        apply_state: document.getElementById('reviewDecision').value,
+        review_decision: document.getElementById('reviewDecision').value,
+        review_amount: document.getElementById('reviewAmount').value ? parseInt(document.getElementById('reviewAmount').value) : null,
+        review_comment: document.getElementById('reviewComment').value
+      };
+      
+      if (!reviewData.apply_state) {
+        alert('請選擇審查結果');
+        return;
+      }
+      
+      try {
+        console.log('提交審查數據:', { applicationId, reviewData, url: `${API_BASE}/application/${applicationId}/review` });
+        const res = await fetch(`${API_BASE}/application/${applicationId}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-HTTP-Method-Override': 'PUT' },
+          body: JSON.stringify(reviewData)
+        });
+        
+        console.log('API 回應狀態:', res.status);
+        const result = await res.json();
+        console.log('API 回應數據:', result);
+        
+        if (result.success) {
+          alert('審查結果已提交');
+          resetReviewForm();
+          // 重新加載申請列表以反映更新
+          await loadApplications(currentUser.id);
+        } else {
+          alert('提交失敗: ' + result.message);
+        }
+      } catch (err) {
+        console.error('提交審查結果失敗:', err);
+        alert('提交失敗: ' + err.message);
+      }
+    }
+    
+    function resetReviewForm() {
+      document.getElementById('reviewForm').reset();
+      document.getElementById('reviewApplicationId').value = '';
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>
