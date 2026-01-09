@@ -263,25 +263,19 @@ app.get('/api/student/:id/applications', async (req, res) => {
 // 取得所有可申請的獎學金
 app.get('/api/scholarships', async (req, res) => {
   try {
-    const isAdminView = req.query.admin === 'true' || req.query.admin === '1';
-
     const [rows] = await promisePool.query(
       `SELECT 
         s.name,
         s.amount,
         s.description,
-        s.identity_restriction,
-        s.is_published,
-        s.published_by,
-        s.published_at,
+        s.created_at,
         GROUP_CONCAT(u.name SEPARATOR ', ') AS organizations
       FROM Scholarship s
       LEFT JOIN Scholarship_Organization so ON s.name = so.scholarship_name
       LEFT JOIN Organization o ON so.organization_id = o.id
       LEFT JOIN User u ON o.id = u.id
-      ${isAdminView ? '' : 'WHERE s.is_published = TRUE'}
-      GROUP BY s.name, s.amount, s.description, s.identity_restriction, s.is_published, s.published_by, s.published_at
-      ORDER BY (s.published_at IS NULL), s.published_at DESC, s.name ASC`
+      GROUP BY s.name, s.amount, s.description, s.created_at
+      ORDER BY s.created_at DESC, s.name ASC`
     );
 
     res.json({

@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>推薦信管理 - ScholarLink</title>
-  <script src="auth.js"></script>
+  <script src="../auth.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
     :root { --bg:#0f172a; --card:#111827; --surface:#0b1220; --accent:#7dd3fc; --accent-strong:#22d3ee; --text:#e5e7eb; --muted:#9ca3af; --border:#1f2937; --shadow:0 24px 60px rgba(0,0,0,0.35); --radius:14px; }
@@ -42,10 +42,10 @@
     <div class="nav">
       <div class="brand"><span class="dot"></span>ScholarLink <span style="font-size:14px;color:var(--accent-strong);margin-left:8px;">教師端</span></div>
       <nav>
-        <a href="/scholarship/pages/teacher_students.html">學生列表</a>
-        <a href="/scholarship/pages/teacher_recommender.html">推薦信管理</a>
-        <a href="/scholarship/pages/teacher_announcements.html">公告</a>
-        <a href="/scholarship/pages/login.html" onclick="logout();return false;">登出</a>
+        <a href="/pages/teacher_students.html">學生列表</a>
+        <a href="/pages/teacher_recommender.html">推薦信管理</a>
+        <a href="/pages/teacher_announcements.html">公告</a>
+        <a href="/pages/login.html" onclick="logout();return false;">登出</a>
       </nav>
     </div>
   </header>
@@ -98,7 +98,7 @@
 
   </div>
   <script>
-    const API_BASE = '/scholarship/api';
+    const API_BASE = '/api';
     let applications = [];
     
     async function init(){

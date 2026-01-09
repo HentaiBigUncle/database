@@ -4,7 +4,7 @@ function checkAuth(allowedRoles = []) {
   
   if (!userStr) {
     // 未登入，重定向到登入頁面
-    window.location.href = '/scholarship/pages/login.html';
+    window.location.href = '/pages/login.html';
     return null;
   }
   
@@ -16,19 +16,19 @@ function checkAuth(allowedRoles = []) {
     // 根據使用者類型重定向到對應頁面
     switch(user.type) {
       case 'Student':
-        window.location.href = '/scholarship/pages/student_dashboard.html';
+        window.location.href = '/pages/student_dashboard.html';
         break;
       case 'Teacher':
-        window.location.href = '/scholarship/pages/teacher.html';
+        window.location.href = '/pages/teacher.html';
         break;
       case 'SystemAdministrator':
-        window.location.href = '/scholarship/pages/admin_scholarships.html';
+        window.location.href = '/pages/admin_scholarships.html';
         break;
       case 'Organization':
-        window.location.href = '/scholarship/pages/organization.html';
+        window.location.href = '/pages/organization.html';
         break;
       default:
-        window.location.href = '/scholarship/pages/login.html';
+        window.location.href = '/pages/login.html';
     }
     return null;
   }
@@ -40,6 +40,6 @@ function logout() {
   if (confirm('確定要登出嗎？')) {
     sessionStorage.removeItem('currentUser');
     // 使用完整路徑確保正確重定向
-    window.location.href = '/scholarship/pages/login.html';
+    window.location.href = '/pages/login.html';
   }
 }

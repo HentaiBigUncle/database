@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>學生列表 - ScholarLink</title>
-  <script src="auth.js"></script>
+  <script src="../auth.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
     :root { --bg:#0f172a; --card:#111827; --surface:#0b1220; --accent:#7dd3fc; --accent-strong:#22d3ee; --text:#e5e7eb; --muted:#9ca3af; --border:#1f2937; --shadow:0 24px 60px rgba(0,0,0,0.35); --radius:14px; }
@@ -38,10 +38,10 @@
     <div class="nav">
       <div class="brand"><span class="dot"></span>ScholarLink <span style="font-size:14px;color:var(--accent-strong);margin-left:8px;">教師端</span></div>
       <nav>
-        <a href="/scholarship/pages/teacher_students.html">學生列表</a>
-        <a href="/scholarship/pages/teacher_recommender.html">推薦信管理</a>
-        <a href="/scholarship/pages/teacher_announcements.html">公告</a>
-        <a href="/scholarship/pages/login.html" onclick="logout();return false;">登出</a>
+        <a href="/pages/teacher_students.html">學生列表</a>
+        <a href="/pages/teacher_recommender.html">推薦信管理</a>
+        <a href="/pages/teacher_announcements.html">公告</a>
+        <a href="/pages/login.html" onclick="logout();return false;">登出</a>
       </nav>
     </div>
   </header>
@@ -67,7 +67,7 @@
               <td>境外學生助學金</td>
               <td>2026/01/06</td>
               <td><span class="status pending">待撰寫</span></td>
-              <td><a class="btn primary" href="/scholarship/pages/teacher_recommender.html?student=A123456789&scholarship=%E5%A2%83%E5%A4%96%E5%AD%B8%E7%94%9F%E5%8A%A9%E5%AD%B8%E9%87%91">撰寫推薦</a></td>
+              <td><a class="btn primary" href="/pages/teacher_recommender.html?student=A123456789&scholarship=%E5%A2%83%E5%A4%96%E5%AD%B8%E7%94%9F%E5%8A%A9%E5%AD%B8%E9%87%91">撰寫推薦</a></td>
             </tr>
             <tr>
               <td>林佳欣</td>
@@ -75,7 +75,7 @@
               <td>弱勢助學金</td>
               <td>2026/01/03</td>
               <td><span class="status pending">待撰寫</span></td>
-              <td><a class="btn primary" href="/scholarship/pages/teacher_recommender.html?student=A123456790&scholarship=%E5%BC%B1%E5%8B%A2%E5%8A%A9%E5%AD%B8%E9%87%91">撰寫推薦</a></td>
+              <td><a class="btn primary" href="/pages/teacher_recommender.html?student=A123456790&scholarship=%E5%BC%B1%E5%8B%A2%E5%8A%A9%E5%AD%B8%E9%87%91">撰寫推薦</a></td>
             </tr>
             <tr>
               <td>陳大衛</td>
@@ -83,7 +83,7 @@
               <td>學業成績優異獎學金</td>
               <td>2025/12/20</td>
               <td><span class="status done">已送出</span></td>
-              <td><a class="btn" href="/scholarship/pages/teacher_recommender.html?student=A123456791&scholarship=%E5%AD%B8%E6%A5%AD%E6%88%90%E7%B8%BE%E5%84%AA%E7%95%B0%E7%8D%8E%E5%AD%B8%E9%87%91">檢視內容</a></td>
+              <td><a class="btn" href="/pages/teacher_recommender.html?student=A123456791&scholarship=%E5%AD%B8%E6%A5%AD%E6%88%90%E7%B8%BE%E5%84%AA%E7%95%B0%E7%8D%8E%E5%AD%B8%E9%87%91">檢視內容</a></td>
             </tr>
           </tbody>
         </table>
@@ -94,7 +94,7 @@
     </section>
   </div>
   <script>
-    const API_BASE = '/scholarship/api';
+    const API_BASE = '/api';
     
     async function init(){
       const user = checkAuth(['Teacher']);
@@ -129,7 +129,7 @@
             <td>${app.scholarship_name}</td>
             <td>${date}</td>
             <td><span class="status ${statusClass}">${statusText}</span></td>
-            <td><a class="${btnClass}" href="/scholarship/pages/teacher_recommender.html?student=${encodeURIComponent(app.student_id)}&scholarship=${encodeURIComponent(app.scholarship_name || '')}">${btnText}</a></td>
+            <td><a class="${btnClass}" href="/pages/teacher_recommender.html?student=${encodeURIComponent(app.student_id)}&scholarship=${encodeURIComponent(app.scholarship_name || '')}">${btnText}</a></td>
           </tr>`;
         }).join('');
       }catch(e){

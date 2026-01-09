@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>線上申請獎學金 - ScholarLink</title>
-  <script src="auth.js"></script>
+  <script src="../auth.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
     :root {
@@ -152,7 +152,7 @@
         <a href="student.html">返回首頁</a>
         <a href="student_results.html">申請結果</a>
         <a href="student_profile_apache.html">個人資料</a>
-        <a href="/scholarship/pages/login.html" onclick="logout(); return false;">登出</a>
+        <a href="/pages/login.html" onclick="logout(); return false;">登出</a>
       </nav>
     </div>
   </header>
@@ -207,7 +207,7 @@
       throw new Error('Unauthorized');
     }
 
-    const API_BASE = '/scholarship/api';
+    const API_BASE = '/api';
 
     // 從 URL 取得獎學金名稱
     function getScholarshipFromURL() {
