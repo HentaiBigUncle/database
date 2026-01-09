@@ -261,7 +261,8 @@
   </footer>
 
   <script>
-    const API_BASE = 'http://localhost/scholarship/api';
+    // 使用相對路徑，確保在 localhost 與 Tailscale IP 都可用
+    const API_BASE = `/scholarship/api`;
 
     // 新增帳號
     document.getElementById('accountForm').addEventListener('submit', async (e) => {
@@ -269,10 +270,17 @@
       const msgDiv = document.getElementById('form-msg');
       msgDiv.innerHTML = '';
 
-      const id = document.getElementById('accountId').value;
-      const name = document.getElementById('accountName').value;
-      const email = document.getElementById('accountEmail').value;
+      const id = document.getElementById('accountId').value.trim();
+      const name = document.getElementById('accountName').value.trim();
+      const email = document.getElementById('accountEmail').value.trim();
       const type = document.getElementById('accountType').value;
+
+      // 僅允許 @gmail.com、@example.com、@foundation.org 的合法 Email
+      const emailOk = /^[^@\s]+@(gmail\.com|example\.com|foundation\.org)$/i.test(email);
+      if (!emailOk) {
+        msgDiv.innerHTML = `<div class="error-msg">❌ Email 必須是 @gmail.com / @example.com / @foundation.org</div>`;
+        return;
+      }
 
       try {
         const response = await fetch(`${API_BASE}/user`, {
@@ -284,7 +292,8 @@
         });
 
         const data = await response.json();
-        if (!response.ok) {
+
+        if (!response.ok || !data.success) {
           msgDiv.innerHTML = `<div class="error-msg">❌ ${data.message || '新增失敗'}</div>`;
         } else {
           msgDiv.innerHTML = `<div class="success-msg">✓ 帳號已新增成功（預設密碼：${data.data.tempPassword}）</div>`;

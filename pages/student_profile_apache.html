@@ -274,8 +274,8 @@
       throw new Error('Unauthorized');
     }
 
-    // 設定 API 基礎 URL
-    const API_BASE = '/scholarship/api';
+    // 設定 API 基礎 URL（使用目前網域，避免 localhost 與 IP 不一致）
+    const API_BASE = `${window.location.origin}/scholarship/api`;
     
     // 使用登入的學生ID
     const CURRENT_STUDENT_ID = currentUser.id;
@@ -588,11 +588,21 @@
         .map(input => input.value.trim())
         .filter(phone => phone !== ''); // 過濾空白電話
 
+      const name = (formData.get('name') || '').trim();
+      const email = (formData.get('email') || '').trim();
+      const major = (formData.get('major') || '').trim();
+
+      // 僅允許 @gmail.com、@example.com、@foundation.org 的合法 Email
+      if (!/^[^@\s]+@(gmail\.com|example\.com|foundation\.org)$/i.test(email)) {
+        showError('Email 必須是 @gmail.com / @example.com / @foundation.org');
+        return;
+      }
+
       const data = {
-        name: formData.get('name'),
-        email: formData.get('email'),
+        name,
+        email,
         identity: formData.get('identity'),
-        major: formData.get('major'),
+        major,
         phones: phones,
         additionalInfo: null
       };
@@ -626,7 +636,7 @@
         }
       } catch (error) {
         console.error('儲存錯誤:', error);
-        showError('儲存時發生錯誤，請稍後再試');
+        showError('儲存時發生錯誤：' + error.message);
       }
     }
 
